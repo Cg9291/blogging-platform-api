@@ -1,4 +1,21 @@
 import express from 'express'
+import { MongoClient } from 'mongodb';
+
+async function runGetStarted() {
+  const uri = 'mongodb://127.0.0.1:27017/blogging-platform'
+  const client = new MongoClient(uri);
+
+  try {
+    const database = client.db();
+    const posts = database.collection('posts');
+    const allPosts = await posts.find({}).toArray()
+
+    console.log(allPosts)
+  } finally {
+    await client.close();
+  }
+}
+runGetStarted().catch(console.dir);
 
 const PORT = 3000;
 
