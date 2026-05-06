@@ -1,59 +1,70 @@
 import express from 'express'
-import { MongoClient } from 'mongodb';
-
-async function runGetStarted() {
-  const uri = 'mongodb://127.0.0.1:27017/blogging-platform'
-  const client = new MongoClient(uri);
-
-  try {
-    const database = client.db();
-    const posts = database.collection('posts');
-    const allPosts = await posts.find({}).toArray()
-
-    console.log(allPosts)
-  } finally {
-    await client.close();
-  }
-}
-runGetStarted().catch(console.dir);
+import { db } from './database/db.ts';
+import { ObjectId } from 'mongodb';
 
 const PORT = 3000;
 
 const app = express()
+app.use(express.json())
 app.get("/", (req, res) => {
   return res.redirect(301, '/posts')
 })
 
-app.get("/posts", (req, res) => {
-  return res.send({ message: "Look at all these posts" })
+app.get("/posts", async (req, res) => {
+  try {
+    const result = await db.collection('posts').find({}).toArray()
+    return res.send(result)
+  } catch (err) {
+    return err
+  }
 })
 
-app.post("/posts", (req, res) => {
-  return res.send({ message: "We'll pretend we successfully created your post" })
+app.post("/posts", async (req, res) => {
+  let reqBody = req.body
+  reqBody = { ...reqBody, createdAt: new Date().toISOString() }
+  try {
+    const result = await db.collection('posts').insertOne(reqBody)
+    return res.send(result)
+  } catch (err) {
+    return res.send(err)
+  }
 })
 
-app.get("/posts/:postId", (req, res) => {
+app.get("/posts/:postId", async (req, res) => {
   const params = req.params
   const postId = params.postId
 
-  console.log({ postId })
-  return res.send({ message: "get 1 post, let's pretend we did that" })
+  try {
+    const result = await db.collection('posts').findOne({ _id: new ObjectId(postId) })
+    return res.send(result)
+  } catch (err) {
+    return res.status(404).send({ err })
+  }
 })
 
-app.put("/posts/:postId", (req, res) => {
+app.put("/posts/:postId", async (req, res) => {
+  const params = req.params
+  const postId = params.postId
+  const reqBody = req.body
+
+  try {
+    const result = await db.collection('posts').updateOne({ _id: new ObjectId(postId) }, { $set: reqBody })
+    return res.send(result)
+  } catch (err) {
+    return res.status(404).send({ error: err })
+  }
+})
+
+app.delete("/posts/:postId", async (req, res) => {
   const params = req.params
   const postId = params.postId
 
-  console.log({ postId })
-  return res.send({ message: "Put, we will pretend your put request was succesful" })
-})
-
-app.delete("/posts/:postId", (req, res) => {
-  const params = req.params
-  const postId = params.postId
-
-  console.log({ postId })
-  return res.send({ message: "Delete, right, we'll pretend the delete request was succesful" })
+  try {
+    const result = await db.collection('posts').deleteOne({ _id: new ObjectId(postId) })
+    return res.send(result)
+  } catch (err) {
+    return res.status(404).send({ error: err })
+  }
 })
 
 app.use((req, res) => {
