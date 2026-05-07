@@ -1,4 +1,5 @@
 import * as postsData from "../database/posts.db.ts";
+import type { ExistingPostType, PostType } from "../types & schemas/types-and-schemas.ts";
 
 export async function getAllPosts() {
   const result = await postsData.findAllPosts()
@@ -10,9 +11,12 @@ export async function getAllPosts() {
 }
 
 
-export async function createOnePost(reqBody) {
-  reqBody = { ...reqBody, createdAt: new Date().toISOString() }
-  const result = await postsData.createOnePost(reqBody)
+export async function createOnePost(reqBody: PostType) {
+  const newIsoDate = new Date().toISOString()
+  const formattedReqBody = { ...reqBody, createdAt: newIsoDate, updatedAt: newIsoDate }
+
+  const result = await postsData.createOnePost(formattedReqBody)
+
   if (!result.acknowledged) {
     throw new Error("Insert failed")
   }
@@ -29,8 +33,9 @@ export async function getPostById(postId: string) {
   return result
 }
 
-export async function updatePostById(postId: string, reqBody) {
-  const result = await postsData.updateOnePost(postId, reqBody)
+export async function updatePostById(postId: string, reqBody: PostType) {
+  const formattedReqBody: ExistingPostType = { ...reqBody, updatedAt: new Date().toISOString() }
+  const result = await postsData.updateOnePost(postId, formattedReqBody)
 
   if (result.matchedCount === 0) {
     throw new Error('Post not found')
