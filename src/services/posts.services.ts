@@ -16,12 +16,14 @@ export async function createOnePost(reqBody: PostType) {
   const formattedReqBody = { ...reqBody, createdAt: newIsoDate, updatedAt: newIsoDate }
 
   const result = await postsData.createOnePost(formattedReqBody)
+  const { _id, ...rest } = formattedReqBody
 
   if (!result.acknowledged) {
     throw new Error("Insert failed")
   }
 
-  return { message: "Post was successfully created!", insertedId: result.insertedId }
+  const formattedResult = { id: result.insertedId.toHexString(), ...rest }
+  return formattedResult
 }
 
 
@@ -30,20 +32,24 @@ export async function getPostById(postId: string) {
   if (result === null) {
     throw new Error("Could not find resource")
   }
-  return result
+
+  const { _id, ...rest } = result
+  const formattedResult = { id: _id.toHexString(), ...rest }
+
+  return formattedResult
 }
 
 export async function updatePostById(postId: string, reqBody: PostType) {
   const formattedReqBody: ExistingPostType = { ...reqBody, updatedAt: new Date().toISOString() }
   const result = await postsData.updateOnePost(postId, formattedReqBody)
-
+  //todo:add the createdAt prop in the return body
   if (result.matchedCount === 0) {
     throw new Error('Post not found')
   }
 
   return {
-    message: 'Post updated successfully',
-    modifiedCount: result.modifiedCount,
+    id: postId,
+    ...formattedReqBody
   }
 }
 
@@ -54,7 +60,5 @@ export async function deletePostById(postId: string) {
     throw new Error('Post not found')
   }
 
-  return {
-    message: 'Post deleted successfully',
-  }
+  return {}
 }
