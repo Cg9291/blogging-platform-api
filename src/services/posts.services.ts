@@ -1,11 +1,22 @@
 import * as postsData from "../database/posts.db.ts";
 import type { ExistingPostType, PostType } from "../types & schemas/types-and-schemas.ts";
 
-export async function getAllPosts() {
-  const result = await postsData.findAllPosts()
-  if (!Array.isArray(result)) {//todo: maybe remove,since redundant
-    throw new Error("Wrong document format was returned")
+export async function getAllPosts(term?: string) {
+  let result;
+
+  if (!term) {
+    result = await postsData.findAllPosts()
+    return result
   }
+
+  result = await postsData.findAllPostsByFilter({
+    $or: [
+      { title: { $regex: term, $options: 'i' } },
+      { content: { $regex: term, $options: 'i' } },
+      { category: { $regex: term, $options: 'i' } },
+    ],
+  })
+
 
   return result
 }

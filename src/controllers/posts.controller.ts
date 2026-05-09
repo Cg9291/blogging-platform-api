@@ -5,8 +5,10 @@ import zod from 'zod'
 import { Post } from '../types & schemas/types-and-schemas.ts'
 
 export async function getAllPosts(req: Request, res: Response) {
+  const term = req.query.term?.toString().toLowerCase().trim()
+
   try {
-    const result = await postsServices.getAllPosts()
+    const result = await postsServices.getAllPosts(term)
     return res.send(result)
   } catch (err) {
     return res.status(500).send({ error: 'Internal server error' })

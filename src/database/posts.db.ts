@@ -8,6 +8,10 @@ export async function findAllPosts() {
   return await getPostsCollection.find({}).toArray()
 }
 
+export async function findAllPostsByFilter(filter: Record<string, unknown>) {
+  return await getPostsCollection.find(filter).toArray()
+}
+
 export async function createOnePost(reqBody: PostType) {
   return await getPostsCollection.insertOne(reqBody)
 }
