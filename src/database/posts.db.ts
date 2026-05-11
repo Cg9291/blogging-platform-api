@@ -21,7 +21,7 @@ export async function findOnePost(postId: string) {
 }
 
 export async function updateOnePost(postId: string, reqBody: ExistingPostType) {
-  return await getPostsCollection.updateOne({ _id: new ObjectId(postId) }, { $set: reqBody })
+  return await getPostsCollection.findOneAndUpdate({ _id: new ObjectId(postId) }, { $set: reqBody }, { returnDocument: "after" })
 }
 
 export async function deleteOnePost(postId: string) {

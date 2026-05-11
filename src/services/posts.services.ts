@@ -2,14 +2,20 @@ import * as postsData from "../database/posts.db.ts";
 import type { ExistingPostType, PostType } from "../types & schemas/types-and-schemas.ts";
 
 export async function getAllPosts(term?: string) {
-  let result;
+  let formattedResult;
 
   if (!term) {
-    result = await postsData.findAllPosts()
-    return result
+    const result = await postsData.findAllPosts()
+
+    formattedResult = result.map(({ _id, ...rest }) => ({
+      id: _id.toHexString(),
+      ...rest,
+    }))
+
+    return formattedResult
   }
 
-  result = await postsData.findAllPostsByFilter({
+  const result = await postsData.findAllPostsByFilter({
     $or: [
       { title: { $regex: term, $options: 'i' } },
       { content: { $regex: term, $options: 'i' } },
@@ -17,8 +23,12 @@ export async function getAllPosts(term?: string) {
     ],
   })
 
+  formattedResult = result.map(({ _id, ...rest }) => ({
+    id: _id.toHexString(),
+    ...rest,
+  }))
 
-  return result
+  return formattedResult
 }
 
 
@@ -27,13 +37,12 @@ export async function createOnePost(reqBody: PostType) {
   const formattedReqBody = { ...reqBody, createdAt: newIsoDate, updatedAt: newIsoDate }
 
   const result = await postsData.createOnePost(formattedReqBody)
-  const { _id, ...rest } = formattedReqBody
 
   if (!result.acknowledged) {
     throw new Error("Insert failed")
   }
 
-  const formattedResult = { id: result.insertedId.toHexString(), ...rest }
+  const formattedResult = { id: result.insertedId.toHexString(), ...formattedReqBody }
   return formattedResult
 }
 
@@ -54,13 +63,14 @@ export async function updatePostById(postId: string, reqBody: PostType) {
   const formattedReqBody: ExistingPostType = { ...reqBody, updatedAt: new Date().toISOString() }
   const result = await postsData.updateOnePost(postId, formattedReqBody)
   //todo:add the createdAt prop in the return body
-  if (result.matchedCount === 0) {
+  if (!result) {
     throw new Error('Post not found')
   }
+  const { _id, ...rest } = result
 
   return {
-    id: postId,
-    ...formattedReqBody
+    id: _id.toHexString(),
+    ...rest
   }
 }
 
